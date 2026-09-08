@@ -32,3 +32,14 @@ updates:
       day: "monday"
     commit-message:
       prefix: "build"
+    ignore:
+      # The project pins `requires-python = ">=3.12,<3.13"`, so a base-image
+      # bump to 3.13 or 3.14 produces an image whose interpreter the locked
+      # dependency set refuses to install. Patch updates within 3.12 are still
+      # wanted -- those carry the security fixes -- so only major and minor are
+      # ignored, and moving to a new minor stays a deliberate edit to
+      # pyproject.toml, uv.lock and the Dockerfile together.
+      - dependency-name: "python"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
