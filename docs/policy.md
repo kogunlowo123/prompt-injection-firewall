@@ -152,12 +152,21 @@ Every variable, all optional, all safe to run with:
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `PIFW_MODE` | `monitor` | `monitor` or `enforce` |
-| `PIFW_FLAG_THRESHOLD` | `0.5` | Calibrate it; do not guess it |
+| `PIFW_FLAG_THRESHOLD` | `0.5` | Deliberately conservative. Calibrate it |
 | `PIFW_BLOCK_THRESHOLD` | `0.9` | Must be ≥ the flag threshold |
 | `PIFW_MODEL_PATH` | unset | **Set this.** Without it the learned layer is off and the score falls back to the layers that bypass at 93.75% |
 | `PIFW_RECORD_PATH` | unset | Required when `PIFW_MODE=enforce` |
 | `PIFW_RECORD_TEXT` | `false` | Stores the prompts. Opt-in |
 | `PIFW_RECORD_SALT` | unset | Stable fingerprints across restarts |
+
+**On the default flag threshold.** 0.5 corresponds to no measured operating
+point, and that is intentional: a 1% false-positive budget lands near **0.11**
+with a model loaded and near **0.84** without one, so any single default is
+wrong for at least one of the two configurations. 0.5 is above the calibrated
+point for the model arm and below it for the fallback — conservative for the
+first, permissive for the second — and it is the natural decision boundary of a
+logistic probability, which makes it a defensible placeholder and a poor
+setting. Run `pifw calibrate` against your own benign traffic and replace it.
 
 No credentials. This package authenticates to nothing and calls nothing.
 
