@@ -4,7 +4,7 @@
 # project into a self-contained virtual environment; the runtime copies that
 # environment and the source, and carries no build tooling.
 
-FROM python:3.12-slim-bookworm AS builder
+FROM python:3.14-slim-bookworm AS builder
 
 # uv comes from its own published image rather than a curl-to-shell: the digest
 # is pinned by the tag, and there is no download step that can quietly change.
@@ -35,7 +35,7 @@ COPY tasks.py tasks_local.py ./
 RUN uv sync --locked --no-dev --no-editable
 
 
-FROM python:3.12-slim-bookworm AS runtime
+FROM python:3.14-slim-bookworm AS runtime
 
 LABEL org.opencontainers.image.title="prompt-injection-firewall" \
       org.opencontainers.image.description="A prompt-injection firewall that publishes its own bypass rate." \
