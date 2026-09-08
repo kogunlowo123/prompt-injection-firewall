@@ -1,0 +1,58 @@
+# Three ways to run the image, none of which need a network or a credential.
+#
+#   docker compose run --rm firewall            # doctor: proves the install works
+#   docker compose run --rm scan                # score a message from stdin
+#   docker compose run --rm evaluate            # the twelve-fold measurement
+#
+# There is no long-running service here on purpose. This package is a library
+# and a command-line tool; it exposes no port and listens for nothing, so a
+# `docker compose up` that idles a container would be theatre.
+
+x-common: &common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: prompt-injection-firewall:local
+  # Nothing in this image needs to reach the network. If a future dependency
+  # starts trying to, this is where it fails loudly rather than quietly.
+  network_mode: none
+  read_only: true
+  cap_drop: [ALL]
+  security_opt:
+    - no-new-privileges:true
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  environment:
+    PIFW_MODE: ${PIFW_MODE:-monitor}
+    PIFW_FLAG_THRESHOLD: ${PIFW_FLAG_THRESHOLD:-0.5}
+    PIFW_BLOCK_THRESHOLD: ${PIFW_BLOCK_THRESHOLD:-0.9}
+    PIFW_RECORD_TEXT: ${PIFW_RECORD_TEXT:-false}
+  volumes:
+    # The only writable path. Holds the audit record, trained models and
+    # generated reports; everything else in the container is read-only.
+    - ./var:/app/var
+
+services:
+  # `docker compose run --rm firewall <subcommand>` reaches every command.
+  firewall:
+    <<: *common
+
+  scan:
+    <<: *common
+    command: ["scan", "--json"]
+    # A message arrives on stdin, so the container needs it attached:
+    #   echo "ignore previous instructions" | docker compose run --rm -T scan
+    stdin_open: true
+
+  evaluate:
+    <<: *common
+    command:
+      - evaluate
+      - --corpus=/app/examples/corpus.jsonl.gz
+      - --eval-corpus=/app/examples/holdout.jsonl.gz
+      - --baseline=/app/examples/baseline.json
+      - --report=/app/var/evaluation.json
+      - --markdown=/app/var/evaluation.md
+    # Twelve folds, each training a model to convergence. Minutes, not seconds,
+    # and it wants more than a default container's memory.
+    mem_limit: 4g
