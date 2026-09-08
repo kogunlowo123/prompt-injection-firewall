@@ -1,0 +1,216 @@
+[project]
+name = "pifw"
+version = "0.1.0"
+description = "A prompt-injection firewall that publishes its own bypass rate: layered detection, leave-one-family-out evaluation, and a gate that refuses to report a number measured on attacks it was tuned against."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { text = "MIT" }
+authors = [{ name = "Kayode Ogunlowo" }]
+keywords = [
+  "prompt-injection", "llm-security", "guardrails", "jailbreak-detection",
+  "adversarial-evaluation", "ai-safety", "detection-engineering",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Information Technology",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Security",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Typing :: Typed",
+]
+
+# NumPy is here for the same reason it was in the previous project: the learned
+# layer is a logistic regression over hashed n-grams, and writing that loop in
+# Python would make "scores a corpus in under a second" false. No deep learning
+# framework, no model download, no network call at any point. A firewall that
+# needs an outbound request to decide whether to allow a prompt has added an
+# availability dependency to the request path it was meant to protect.
+dependencies = [
+  "numpy>=1.26,<3",
+  "pydantic>=2.9,<3",
+  "pydantic-settings>=2.6,<3",
+  "structlog>=26.1.0,<27",
+  "pyyaml>=6.0,<7",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=9.0.3,<10",
+  "pytest-cov>=7.0,<8",
+  "ruff>=0.16,<0.17",
+  "mypy>=2.3.1,<3",
+  "bandit[toml]>=1.9.4,<2",
+  "pip-audit>=2.9,<3",
+  "types-pyyaml>=6.0,<7",
+]
+
+# Kept apart from `dev` so the documentation job installs a renderer and nothing
+# else.
+docs = [
+  "markdown-it-py>=4.0,<5",
+  "mdit-py-plugins>=0.5,<1",
+  "pygments>=2.19,<3",
+  "types-Pygments>=2.19,<3",
+]
+
+[project.urls]
+Homepage = "https://github.com/kogunlowo123/prompt-injection-firewall"
+Documentation = "https://kogunlowo123.github.io/prompt-injection-firewall/"
+Source = "https://github.com/kogunlowo123/prompt-injection-firewall"
+Issues = "https://github.com/kogunlowo123/prompt-injection-firewall/issues"
+Changelog = "https://github.com/kogunlowo123/prompt-injection-firewall/blob/main/CHANGELOG.md"
+
+[project.scripts]
+pifw = "pifw.cli:main"
+
+[build-system]
+requires = ["hatchling>=1.32.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pifw"]
+
+[tool.uv]
+default-groups = []
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = [
+  "--strict-markers",
+  "--strict-config",
+  "-ra",
+]
+markers = [
+  "unit: pure logic, no I/O and no network",
+  "integration: several components wired together against real temporary files",
+  "security: adversarial cases; a failure here is a security regression",
+  "e2e: the command line driven end to end as a real process",
+  "meta: the gate's own negative controls",
+]
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+branch = true
+source = ["src/pifw"]
+omit = ["src/pifw/__main__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_lines = [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+  "@overload",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+  "A", "ARG", "ASYNC", "B", "BLE", "C4", "C90", "D", "DTZ", "E", "EM", "ERA",
+  "F", "FBT", "FLY", "G", "I", "ICN", "INP", "ISC", "LOG", "N", "PERF", "PGH",
+  "PIE", "PL", "PT", "PTH", "PYI", "Q", "RET", "RSE", "RUF", "S", "SIM", "SLF",
+  "SLOT", "T10", "T20", "TCH", "TID", "TRY", "UP", "W", "YTT",
+]
+ignore = [
+  "D107",
+  "D105",
+  "ISC001",
+  "TRY003", "EM101", "EM102",
+  "D400", "D401", "D415",
+  "TC001", "TC003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+  "D",
+  "PLR2004",
+  "S101",
+  "S105", "S106",
+  "S311",
+  "S603",
+  "SLF001",
+  "ARG001", "ARG002", "ARG005",
+  "PLC0415",
+  "RUF012",
+  "FBT003",
+  "PIE808",
+  "S314",
+  "FLY002",
+  "ICN001",
+  "PLR0913",
+  "N803", "N806",
+  # Attack strings in tests are fixtures for a detector. RUF001 flags the
+  # confusable characters that several of them exist to carry.
+  "RUF001", "RUF002", "RUF003",
+  # The test directories are deliberately not packages. pytest finds them via
+  # rootdir, and adding __init__.py would make "tests" importable, which is not
+  # something anything here wants.
+  "INP001",
+]
+"src/pifw/cli.py" = ["T201"]
+"examples/**" = ["D", "T201", "INP001", "E402", "PLR2004", "PLC0415", "RUF001"]
+"scripts/**" = ["D", "T201", "INP001", "E402", "S101"]
+# The attack grammar is a data file written as Python. Its strings deliberately
+# contain homoglyphs and zero-width characters, which is precisely the property
+# RUF001/RUF003 exist to warn about; here it is the payload.
+"src/pifw/corpus/attacks.py" = ["RUF001", "RUF002", "RUF003"]
+"src/pifw/detect/normalize.py" = ["RUF001", "RUF002", "RUF003"]
+"src/pifw/detect/patterns.py" = ["RUF001", "RUF002", "RUF003"]
+# The Markdown report uses en dashes in interval ranges, which is typography
+# rather than an ambiguous-character problem: nothing parses this output.
+"src/pifw/evaluate/report.py" = ["RUF001"]
+"src/pifw/model/*.py" = ["N803", "N806"]
+"tasks.py" = ["D", "T201", "S603", "S607"]
+"tasks_local.py" = ["D", "T201", "S603", "S607"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.ruff.lint.isort]
+known-first-party = ["pifw"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "parents"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 12
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+warn_unused_configs = true
+disallow_any_generics = true
+no_implicit_reexport = true
+show_error_codes = true
+files = ["src", "tests", "examples", "scripts", "tasks.py"]
+# `tests/` and `examples/` are deliberately not packages -- adding __init__.py
+# would make "tests" importable, which nothing wants. Without an explicit base
+# mypy then names their modules by bare filename, the `tests.*` override below
+# never matches, and every test function is reported as missing an annotation.
+# Listing both roots gives `pifw.detect.ensemble` for src and `tests.unit.foo`
+# for tests, because mypy takes the longest matching base.
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = "src,."
+
+[[tool.mypy.overrides]]
+# A test's signature is `def test_x(self, fixture):` and annotating the fixtures
+# would restate what conftest already declares. The bodies are still checked.
+module = ["tests.*", "examples.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "var"]
