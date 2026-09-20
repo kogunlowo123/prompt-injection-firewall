@@ -1,5 +1,9 @@
 # prompt-injection-firewall
 
+![Banner](docs/banner.png)
+
+> If this project is useful, a star helps other engineers find it.
+
 **A prompt-injection firewall that publishes its own bypass rate.**
 
 [![CI](https://github.com/kogunlowo123/prompt-injection-firewall/actions/workflows/ci.yml/badge.svg)](https://github.com/kogunlowo123/prompt-injection-firewall/actions/workflows/ci.yml)
