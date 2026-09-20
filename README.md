@@ -324,3 +324,60 @@ non-zero code alike will retry a broken run until it flakes green.
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+<!-- project-structure -->
+## Project structure
+
+```text
+├── .github/
+├── docs/
+│   ├── attacks.md
+│   ├── ci.md
+│   ├── detection.md
+│   ├── evaluation.md
+│   ├── false-positives.md
+│   ├── policy.md
+│   └── reproducibility.md
+├── examples/
+│   ├── README.md
+│   ├── baseline.json
+│   ├── corpus.jsonl.gz
+│   ├── false_positive_demo.py
+│   ├── holdout.jsonl.gz
+│   ├── quickstart.py
+│   └── unseen_technique_demo.py
+├── scripts/
+│   ├── build_site.py
+│   ├── check-firewall.py
+│   ├── lexicon-holdout.py
+│   └── smoke-test.sh
+├── security/
+│   ├── audit-exceptions.md
+│   └── audit-ignores.txt
+├── src/
+│   └── pifw/
+├── tests/
+│   ├── e2e/
+│   ├── integration/
+│   ├── meta/
+│   ├── security/
+│   ├── unit/
+│   └── conftest.py
+├── .dockerignore
+├── .env.example
+├── .gitattributes
+├── .gitignore
+├── .gitleaks.toml
+├── ARCHITECTURE.md
+├── CHANGELOG.md
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── Dockerfile
+├── LICENSE
+… (truncated)
+```
+
+<!-- architecture -->
+## Architecture
+
+![Architecture diagram](docs/architecture.svg)
