@@ -118,9 +118,9 @@ page fails the pull request instead of shipping a 404.
 
 ## Dependencies
 
-`.github/dependabot.yml` watches `uv.lock` and the Actions used by these
-workflows, weekly, grouped so that a routine bump is one pull request rather
-than nine.
+Dependencies are updated by hand. `pip-audit` runs against the locked set in
+CI, so a vulnerable pin fails the build rather than waiting for someone to
+notice it.
 
 Actions are pinned by major version and Python by exact minor. The project pins
 `>=3.12,<3.13`, so testing on anything else would be testing a configuration
